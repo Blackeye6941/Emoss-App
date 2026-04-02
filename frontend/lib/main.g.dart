@@ -1,12 +1,10 @@
 // GENERATED CODE - DO NOT MODIFY BY HAND
-// Run: dart run build_runner build
-// This file is auto-generated but provided manually for reference
 
 part of 'main.dart';
 
-// ─────────────────────────────────────────────────────────────
-// MessageModel Adapter
-// ─────────────────────────────────────────────────────────────
+// **************************************************************************
+// TypeAdapterGenerator
+// **************************************************************************
 
 class MessageModelAdapter extends TypeAdapter<MessageModel> {
   @override
@@ -59,10 +57,6 @@ class MessageModelAdapter extends TypeAdapter<MessageModel> {
           runtimeType == other.runtimeType &&
           typeId == other.typeId;
 }
-
-// ─────────────────────────────────────────────────────────────
-// ConversationModel Adapter
-// ─────────────────────────────────────────────────────────────
 
 class ConversationModelAdapter extends TypeAdapter<ConversationModel> {
   @override

@@ -6,8 +6,8 @@
 .DS_Store
 .atom/
 .build/
-.so
-.gguf
+assets/models/tinyllama.gguf
+assets/models/model.gguf
 .buildlog/
 .history
 .svn/
