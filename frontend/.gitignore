@@ -7,7 +7,8 @@
 .atom/
 .build/
 assets/models/tinyllama.gguf
-assets/models/model.gguf
+assets/classifier/classifier.onnx
+assets/classifier/vocab.txt
 .buildlog/
 .history
 .svn/

@@ -56,9 +56,10 @@
 // ignore_for_file: depend_on_referenced_packages
 
 import 'dart:async';
-import 'dart:ffi';
 import 'dart:io';
 
+import 'package:empath_ai/emotion_classifier.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:google_fonts/google_fonts.dart';
@@ -370,7 +371,6 @@ class TinyLlamaService extends ChangeNotifier {
   factory TinyLlamaService() => _i;
   TinyLlamaService._();
 
-  LlamaParent? _parent;
   ModelState _state = ModelState.uninitialized;
   double _loadProgress = 0.0;
   String? _errorMsg;
@@ -381,27 +381,27 @@ class TinyLlamaService extends ChangeNotifier {
   bool get isReady => _state == ModelState.ready;
 
   static const Map<String, String> _systemPrompts = {
-    'joy': 'You are EMOSS, a warm empathetic companion. '
-        'The user is joyful. Celebrate with genuine warmth and ask one '
-        'thoughtful follow-up question. Reply in 2–3 sentences only.',
-    'sadness': 'You are EMOSS, a compassionate listener. '
-        'The user is sad or lonely. Acknowledge their pain gently and invite '
-        'them to share more. Reply in 2–3 sentences only.',
-    'anger': 'You are EMOSS, a calm steady companion. '
-        'The user is angry or frustrated. Validate their feeling without '
-        'escalating, then gently explore what happened. Reply in 2–3 sentences only.',
-    'fear': 'You are EMOSS, a reassuring companion. '
-        'The user is anxious or scared. Be soothing, acknowledge the feeling, '
-        'and help them feel grounded. Reply in 2–3 sentences only.',
-    'disgust': 'You are EMOSS, a patient non-judgmental companion. '
-        'The user feels repulsed or bothered. Acknowledge what they feel and '
-        'help them process it calmly. Reply in 2–3 sentences only.',
-    'surprise': 'You are EMOSS, a curious warm companion. '
-        'The user was caught off guard. React with genuine interest and help '
-        'them process the unexpected event. Reply in 2–3 sentences only.',
-    'neutral': 'You are EMOSS, a kind empathetic emotional support companion. '
-        'Listen carefully, respond with warmth, and ask one thoughtful '
-        'question to help the user open up. Reply in 2–3 sentences only.',
+    'joy': 'You are EMO, an emotional support assistant. '
+        'The user is joyful. Reply with ONE short warm response in 2 sentences maximum. '
+        'Do not continue the conversation. Do not speak for the user. Stop after your response.',
+    'sadness': 'You are EMO, an emotional support assistant. '
+        'The user is sad. Acknowledge their feeling gently in 2 sentences maximum. '
+        'Do not continue the conversation. Do not speak for the user. Stop after your response.',
+    'anger': 'You are EMO, an emotional support assistant. '
+        'The user is angry. Validate their feeling calmly in 2 sentences maximum. '
+        'Do not continue the conversation. Do not speak for the user. Stop after your response.',
+    'fear': 'You are EMO, an emotional support assistant. '
+        'The user is anxious. Be soothing and grounding in 2 sentences maximum. '
+        'Do not continue the conversation. Do not speak for the user. Stop after your response.',
+    'disgust': 'You are EMO, an emotional support assistant. '
+        'The user feels bothered. Acknowledge calmly in 2 sentences maximum. '
+        'Do not continue the conversation. Do not speak for the user. Stop after your response.',
+    'surprise': 'You are EMO, an emotional support assistant. '
+        'The user is surprised. React with interest in 2 sentences maximum. '
+        'Do not continue the conversation. Do not speak for the user. Stop after your response.',
+    'neutral': 'You are EMO, an emotional support assistant. '
+        'Listen and respond warmly in 2 sentences maximum. '
+        'Do not continue the conversation. Do not speak for the user. Stop after your response.',
   };
 
   // ── Initialize ───────────────────────────────────────────────
@@ -413,28 +413,37 @@ class TinyLlamaService extends ChangeNotifier {
     _set(ModelState.loading, p: 0.0);
 
     try {
-      final dir = await getApplicationSupportDirectory();
-      final modelFile = File('${dir.path}/tinyllama.gguf');
+      String modelPath;
+      if(kIsWeb) {
+        modelPath = 'assets/models/tinyllama.gguf';
+      }else{
+        final dir = await getApplicationSupportDirectory();
+        final modelFile = File('${dir.path}/tinyllama.gguf');
 
-      if (!modelFile.existsSync()) {
-        final data = await rootBundle.load('assets/models/tinyllama.gguf');
-        final bytes = data.buffer.asUint8List();
-        const chunk = 4 * 1024 * 1024;
-        final sink = modelFile.openWrite();
-        int written = 0;
-        while (written < bytes.length) {
-          final end = (written + chunk).clamp(0, bytes.length);
-          sink.add(bytes.sublist(written, end));
-          written = end;
-          _set(ModelState.loading, p: written / bytes.length * 0.85);
+        if (!modelFile.existsSync()) {
+          final data = await rootBundle.load('assets/models/tinyllama.gguf');
+          final bytes = data.buffer.asUint8List();
+          const chunk = 4 * 1024 * 1024;
+          final sink = modelFile.openWrite();
+          int written = 0;
+          while (written < bytes.length) {
+            final end = (written + chunk).clamp(0, bytes.length);
+            sink.add(bytes.sublist(written, end));
+            written = end;
+            _set(ModelState.loading, p: written / bytes.length * 0.85);
+          }
+          await sink.close();
         }
-        await sink.close();
+        modelPath = modelFile.path;
       }
 
       _set(ModelState.loading, p: 0.90);
 
       _engine = LlamaEngine(LlamaBackend());
-      await _engine!.loadModel(modelFile.path);
+      await _engine!.loadModel(modelPath, modelParams: const ModelParams(
+        contextSize: 512,
+        gpuLayers: 0,
+      ));
 
       _set(ModelState.ready, p: 1.0);
     } catch (e, st) {
@@ -444,21 +453,43 @@ class TinyLlamaService extends ChangeNotifier {
     }
   }
 
+  void _set(ModelState s, {double? p}) {
+    _state = s;
+    if (p != null) _loadProgress = p;
+    notifyListeners();
+  }
+
+
   Stream<String> streamResponse(String userMsg, String emotion) async* {
     if (_engine == null) {
-      yield "Still loading — give me a second.";
+      yield "Still setting up — give me a second.";
       return;
     }
 
     final system = _systemPrompts[emotion] ?? _systemPrompts['neutral']!;
     final messages = [
-      LlamaChatMessage(role: 'system', content: system),
-      LlamaChatMessage(role: 'user', content: userMsg),
+      LlamaChatMessage.fromText(role: LlamaChatRole.system, text: system),
+      LlamaChatMessage.fromText(role: LlamaChatRole.user, text: userMsg),
     ];
 
     try {
-      await for (final token in _engine!.chat(messages)) {
-        yield token;
+      await for (final chunk in _engine!.create(messages, params: const GenerationParams(
+        maxTokens: 50,
+        stopSequences: [
+          '<|im_end|>',
+          '<|im_start|>',
+          '</s>',
+          '[/INST]',
+          '\nUser:',
+          '\nHuman:',
+          '\n\n',
+          '\n\n\n',
+        ],
+      ))) {
+        final content = chunk.choices.firstOrNull?.delta.content;
+        if (content != null && content.isNotEmpty) {
+          yield content;
+        }
       }
     } catch (e) {
       yield '\n\n[Error: $e]';
@@ -593,15 +624,16 @@ Future<void> main() async {
   Hive.registerAdapter(ConversationModelAdapter());
   await Hive.openBox<ConversationModel>('conversations');
   await Hive.openBox<MessageModel>('messages');
+  await EmotionClassifier.initialize();
   TinyLlamaService().initialize(); // background, non-blocking
-  runApp(const EmossApp());
+  runApp(const EMO());
 }
 
-class EmossApp extends StatelessWidget {
-  const EmossApp({super.key});
+class EMO extends StatelessWidget {
+  const EMO({super.key});
   @override
   Widget build(BuildContext context) => MaterialApp(
-        title: 'EMOSS',
+        title: 'EMO',
         debugShowCheckedModeBanner: false,
         theme: T.theme,
         home: const SplashScreen(),
@@ -1063,14 +1095,19 @@ class _ChatScreenState extends State<ChatScreen>
     final text = _ctl.text.trim();
     if (text.isEmpty || _generating) return;
     _ctl.clear();
-    if (CrisisDetector.isCrisis(text)) {
-      await Navigator.push(
-          context, MaterialPageRoute(builder: (_) => const EmergencyScreen()));
+
+    final result = EmotionClassifier.classify(text);
+    _emotion = result.emotion;
+    _conf = result.confidence;
+
+    final isCrisis = result.crisisAlert ||
+        (!result.crisisAlert && CrisisDetector.isCrisis(text));
+
+    if (isCrisis) {
+      await Navigator.push(context,
+          MaterialPageRoute(builder: (_) => const EmergencyScreen()));
       return;
     }
-    final er = EmotionDetector.detect(text);
-    _emotion = er.key;
-    _conf = er.value;
 
     final um = await HiveService.saveMessage(
         conversationId: widget.conversation.id,

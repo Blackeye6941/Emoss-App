@@ -1,0 +1,16 @@
+{
+  "emotion_labels": [
+    "neutral",
+    "joy",
+    "sadness",
+    "anger",
+    "fear",
+    "disgust",
+    "surprise"
+  ],
+  "max_length": 128,
+  "base_model": "distilbert-base-uncased",
+  "num_emotions": 7,
+  "risk_pos_weight": 2.0,
+  "risk_threshold": 0.2
+}

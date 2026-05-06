@@ -21,7 +21,8 @@ dependencies:
   uuid: ^4.3.3
   intl: ^0.19.0
   google_fonts: ^6.1.0
-  llamadart: ^0.2.0
+  llamadart: ^0.6.10
+  onnxruntime: ^1.4.1
   ffi: ^2.1.2
 
 dev_dependencies:
@@ -38,4 +39,7 @@ flutter:
 
   assets:
     - assets/models/tinyllama.gguf
-    - assets/models/model.gguf
+    - assets/classifier/classifier.onnx
+    - assets/classifier/vocab.txt
+    - assets/classifier/classifier_config.json
+    - assets/classifier/tokenizer_config.json
