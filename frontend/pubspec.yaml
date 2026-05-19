@@ -1,0 +1,45 @@
+name: empath_ai
+description: Empathetic AI Chat App with offline Hive storage
+
+publish_to: 'none'
+
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+
+  # Offline storage
+  hive: ^2.2.3
+  hive_flutter: ^1.1.0
+  path_provider: ^2.1.2
+
+  # Utilities
+  uuid: ^4.3.3
+  intl: ^0.19.0
+  google_fonts: ^6.1.0
+  llamadart: ^0.6.10
+  onnxruntime: ^1.4.1
+  ffi: ^2.1.2
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+  # Code generation for Hive adapters
+  hive_generator: ^2.0.1
+  build_runner: ^2.4.8
+
+flutter:
+  uses-material-design: true
+
+  assets:
+    - assets/models/tinyllama.gguf
+    - assets/classifier/classifier.onnx
+    - assets/classifier/vocab.txt
+    - assets/classifier/classifier_config.json
+    - assets/classifier/tokenizer_config.json
