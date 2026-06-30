@@ -31,7 +31,7 @@ Hive (local storage)  →  Persisted Conversation
 | Component | Model | Format | Size |
 |---|---|---|---|
 | Conversational LLM | TinyLlama-1.1B-Chat (QLoRA fine-tuned) | GGUF (IQ4_NL) | ~637 MB |
-| Emotion/Risk Classifier | DistilBERT (multitask) | ONNX | ~66 MB |
+| Emotion/Risk Classifier | DistilBERT (multitask) | ONNX | ~237 MB |
 
 ---
 
