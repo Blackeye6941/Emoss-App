@@ -43,7 +43,7 @@ flutter:
 
     #Uncomment below lines after downloading files from the hf account
 
-    #- assets/models/emo_assistant_tinyllama.gguf
+    #- assets/models/tinyllama.gguf
     #- assets/classifier/classifier_config.json
     #- assets/classifier/tokenizer_config.json
     #- assets/classifier/vocab.txt
