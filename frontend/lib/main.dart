@@ -401,7 +401,8 @@ class TinyLlamaService extends ChangeNotifier {
         'Do not continue the conversation. Do not speak for the user. Stop after your response.',
     'neutral': 'You are EMO, an emotional support assistant. '
         'Listen and respond warmly in 2 sentences maximum. '
-        'Do not continue the conversation. Do not speak for the user. Stop after your response.',
+        'Do not continue the conversation. Do not speak for the user. '
+        'Stop after your response.',
   };
 
   // ── Initialize ───────────────────────────────────────────────
